@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SLS/fmlog"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -21,7 +22,7 @@ func NewLogError(str string,err error)*LogError{
 }
 
 type LogMessage struct{
-	Flag int
+	Level int
 	MessagePATH string
 	MessageNAME	string
 	Filed	*os.File
@@ -33,7 +34,7 @@ const(
 	DEBUG
 )
 //生成LogMessage结构体
-func NewLogMessage(flag int,messagepath string,messagename string)(*LogMessage,error){
+func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,error){
 	filepathstring := filepath.Join(messagepath, messagename)
 	f, err := os.OpenFile(filepathstring, os.O_SYNC|os.O_CREATE, 755)
 	if err != nil {
@@ -41,7 +42,7 @@ func NewLogMessage(flag int,messagepath string,messagename string)(*LogMessage,e
 	}
 
 	return &LogMessage{
-		Flag:flag,
+		Level:level,
 		MessageNAME: messagename,
 		MessagePATH: messagepath,
 		Filed:       f,
@@ -51,12 +52,19 @@ func NewLogMessage(flag int,messagepath string,messagename string)(*LogMessage,e
 func (l *LogMessage)Close(){
 	l.Filed.Close()
 }
-//debug日志记录函数
-func (l *LogMessage)Error(str string)error{
-	_,err:=fmt.Fprintln(l.Filed,str)
+//日志记录函数
+func (l *LogMessage)WriterLog(str string,level int,flag int)error{
+	//生成格式化string
+
+	//如果日志结构等级大于level则将本条log输出到终端
+	if l.Level > level{
+		println(str)
+		return nil
+	}
+	_,err:=fmt.Fprintln(l.Filed,fmlog.New(str,flag))
 	if err!=nil{
 		return NewLogError("写入Log失败",err)
 	}
-	return err
+	return nil
 }
 

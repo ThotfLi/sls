@@ -22,6 +22,7 @@ eg：
 
 
 设置Sflag 可以设置日志输出格式
+以位掩码表示的标志位
 Sflag.TIME     记录调用时间
 Sflage.STACK   记录调用栈
 Sflage.LINE    记录调用行
