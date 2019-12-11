@@ -36,7 +36,7 @@ const(
 //生成LogMessage结构体
 func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,error){
 	filepathstring := filepath.Join(messagepath, messagename)
-	f, err := os.OpenFile(filepathstring, os.O_SYNC|os.O_CREATE, 755)
+	f, err := os.OpenFile(filepathstring, os.O_APPEND|os.O_CREATE, 755)
 	if err != nil {
 		return nil,err
 	}

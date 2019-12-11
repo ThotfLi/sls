@@ -61,8 +61,9 @@ func (f *Fmflages)format()string{
 	}
 	//存在stack flag 格式  文件内容 stackflag
 	if f.flags&STACK != 0{
-		buf := make([]byte,300)
-		runtime.Stack(buf,false)
+		buf := make([]byte,1024)
+		n := runtime.Stack(buf,false)
+		buf = buf[:n]
 		f.buf = bytes.Join([][]byte{f.buf,buf},[]byte("\n"))
 	}
 	if f.flags&TIME !=0{

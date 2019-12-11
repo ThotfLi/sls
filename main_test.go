@@ -9,8 +9,8 @@ func TestNewLogMessage(t *testing.T) {
 	if err!=nil{
 		t.Fail()
 	}
-	log.WriterLog("这是第五条记录",2,fmlog.FILE|fmlog.LINE|fmlog.STACK)
-	log.WriterLog("这是第六条记录",2,fmlog.DEFAULT)
+	log.WriterLog("这是第十一条记录",2,fmlog.FILE|fmlog.LINE|fmlog.STACK)
+	log.WriterLog("这是第十二条记录",2,fmlog.DEFAULT)
 
 	log.Close()
 }

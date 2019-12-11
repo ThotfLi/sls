@@ -1,8 +1,0 @@
-format.go 36 这是第五条记录
-goroutine 7 [running]:
-SLS/fmlog.(*Fmflages).format(0xc000045ee8, 0x562ef2, 0x15)
-	C:/Users/Administrator/go/src/SLS/fmlog/format.go:65 +0x4c9
-SLS/fmlog.New(...)
-	C:/Users/Administrator/go/src/SLS/fmlog/format.go:32
-SLS.(*LogMessage).WriterLog(0xc00005e480, 0x562ef2, 0x15, 0x2, 0x1c, 0xc00005e480, 0
-format.go 36 2019/12/10 22:09 这是第六条记录
