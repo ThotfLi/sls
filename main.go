@@ -2,9 +2,11 @@ package main
 
 import (
 	"SLS/fmlog"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 )
 type LogError struct{
 	err error
@@ -22,10 +24,14 @@ func NewLogError(str string,err error)*LogError{
 }
 
 type LogMessage struct{
-	Level int
-	MessagePATH string
-	MessageNAME	string
+	Level int         //日志等级
+	MessagePATH string	//日志文件地址
+	MessageNAME	string	//日志名
+	Mux	sync.Mutex
+	cnx  context.Context
+	cnxdel context.CancelFunc
 	Filed	*os.File
+
 }
 const(
 	ERROR = iota
@@ -33,6 +39,8 @@ const(
 	INFO
 	DEBUG
 )
+
+
 //生成LogMessage结构体
 func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,error){
 	filepathstring := filepath.Join(messagepath, messagename)
@@ -40,19 +48,24 @@ func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,
 	if err != nil {
 		return nil,err
 	}
-
+	cnx,concel:=context.WithCancel(context.Background())
 	return &LogMessage{
 		Level:level,
 		MessageNAME: messagename,
 		MessagePATH: messagepath,
-		Filed:       f,
+		Filed:f,
+		cnx:cnx,
+		cnxdel:concel,
 	},nil
 }
 //关闭文件
 func (l *LogMessage)Close(){
+	l.cnxdel()
 	l.Filed.Close()
 }
 //日志记录函数
+//如果写入的日志等级低于LogMessage的等级 就将日志直接输出到终端
+//通过fmlog包 格式化
 func (l *LogMessage)WriterLog(str string,level int,flag int)error{
 	//生成格式化string
 
@@ -67,4 +80,54 @@ func (l *LogMessage)WriterLog(str string,level int,flag int)error{
 	}
 	return nil
 }
+//异步日志存储信息的结构
+type AsynLog struct{
+	l	*LogMessage
+	level 	int
+	flag	int
+	str string
+}
+//异步通道
+var asynChan chan *AsynLog
+var initOnceChan sync.Once
 
+//给全局变量赋值
+//开始监听异步通道
+func (l *LogMessage)AsynMessage(str string,level int,flag int){
+	//初始化异步通道
+	initOnceChan.Do(
+			func(){
+				asynChan = make(chan *AsynLog,20)
+				go gAsyncWriteLog(asynChan,l.cnx)
+			})
+
+	//初始化log
+	asl := AsynLog{
+		l:     l,
+		level: level,
+		flag:  flag,
+		str:str,
+	}
+	asynChan<-&asl
+}
+//异步通道监听函数
+//利用context防止goroutinue泄露
+func gAsyncWriteLog(c <-chan *AsynLog,cnx context.Context){
+	var log *AsynLog
+	for{
+		select {
+		case <-cnx.Done():
+			return
+		case log=<-c:
+			if log.l.Level > log.level{
+				println(log.str)
+				return
+			}
+
+			_,err:=fmt.Fprintln(log.l.Filed,fmlog.New(log.str,log.flag))
+			if err!=nil{
+				fmt.Printf("日志写入失败:%s",err)
+			}
+		}
+	}
+}
