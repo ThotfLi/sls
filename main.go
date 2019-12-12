@@ -22,12 +22,12 @@ func NewLogError(str string,err error)*LogError{
 	lr.str = str
 	return &lr
 }
-
+//日志信息结构
 type LogMessage struct{
 	Level int         //日志等级
 	MessagePATH string	//日志文件地址
 	MessageNAME	string	//日志名
-	Mux	sync.Mutex
+	mux	sync.Mutex
 	cnx  context.Context
 	cnxdel context.CancelFunc
 	Filed	*os.File
@@ -49,6 +49,7 @@ func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,
 		return nil,err
 	}
 	cnx,concel:=context.WithCancel(context.Background())
+	var mu sync.Mutex
 	return &LogMessage{
 		Level:level,
 		MessageNAME: messagename,
@@ -56,6 +57,7 @@ func NewLogMessage(level int,messagepath string,messagename string)(*LogMessage,
 		Filed:f,
 		cnx:cnx,
 		cnxdel:concel,
+		mux:mu,
 	},nil
 }
 //关闭文件
@@ -67,14 +69,14 @@ func (l *LogMessage)Close(){
 //如果写入的日志等级低于LogMessage的等级 就将日志直接输出到终端
 //通过fmlog包 格式化
 func (l *LogMessage)WriterLog(str string,level int,flag int)error{
-	//生成格式化string
-
 	//如果日志结构等级大于level则将本条log输出到终端
 	if l.Level > level{
 		println(str)
 		return nil
 	}
+	l.mux.Lock()
 	_,err:=fmt.Fprintln(l.Filed,fmlog.New(str,flag))
+	l.mux.Unlock()
 	if err!=nil{
 		return NewLogError("写入Log失败",err)
 	}
